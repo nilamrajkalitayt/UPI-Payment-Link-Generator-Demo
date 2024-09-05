@@ -18,6 +18,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            user-select: none; /* Disable text selection */
         }
         .container {
             background: rgba(0, 0, 0, 0.6);
@@ -26,6 +27,7 @@
             width: 100%;
             max-width: 500px;
             text-align: center;
+            transition: opacity 1s ease; /* Smooth fade transition */
         }
         .form-control {
             padding: 15px;
@@ -45,17 +47,21 @@
             background-color: #031496;
             color: #ffffff;
             border: none;
-            margin-bottom: 15px; /* Space between buttons */
+            margin-bottom: 15px;
         }
         .btn:hover {
             background-color: #023a70;
         }
-        .result {
-            margin-top: 20px;
-            text-align: left;
-        }
         .copy-button {
             background-color: #031496;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .copy-button img {
+            margin-left: 8px;
+            width: 20px; /* Adjust the size of the icon */
+            height: 20px;
         }
         .copy-button:hover {
             background-color: #023a70;
@@ -70,10 +76,38 @@
             display: grid;
             gap: 15px; /* Space between buttons */
         }
+        .fade-out {
+            opacity: 0; /* Invisible after fade-out */
+        }
     </style>
+    <!-- Disable Right Click, Keyboard Shortcuts, and Developer Tools -->
+    <script>
+        // Disable right-click context menu
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
+
+        // Disable text selection on the entire page
+        document.addEventListener('selectstart', function(event) {
+            event.preventDefault();
+        });
+
+        // Disable common keyboard shortcuts (Ctrl+C, Ctrl+U, etc.)
+        document.addEventListener('keydown', function(event) {
+            // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+S, Ctrl+U
+            if (
+                event.key === 'F12' ||
+                (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J')) ||
+                (event.ctrlKey && (event.key === 'S' || event.key === 'U')) ||
+                (event.metaKey && event.key === 'C') // For macOS
+            ) {
+                event.preventDefault();
+            }
+        });
+    </script>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContent">
         <h1 class="text-primary mb-4">UPI Payment Link Generator</h1>
         <div class="mb-4 mb-4-custom">
             <input type="text" class="form-control" id="amount" placeholder="Enter amount in ₹">
@@ -83,10 +117,13 @@
         </div>
         <div class="d-grid mb-4-custom-button">
             <button id="generateLink" class="btn btn-primary">Generate UPI Payment Link</button>
-            <button id="copyLink" class="btn copy-button" style="display: none;">Copy to Clipboard</button>
+            <button id="copyLink" class="btn copy-button" style="display: none;">
+                Copy to Clipboard
+                <img src="copy to clipboard button icon.png" alt="Copy Icon">
+            </button>
             <button id="openLink" class="btn btn-primary" style="display: none;">Open Link</button>
+            <button id="refreshButton" class="btn btn-secondary" style="display: none;">Refresh</button>
         </div>
-        <div class="result" id="result"></div>
     </div>
 
     <!-- Bootstrap JS from CDN -->
@@ -107,25 +144,27 @@
             // Construct UPI payment link
             const link = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=Merchant%20Name&cu=INR&am=${encodeURIComponent(formattedAmount)}`;
 
-            // Display the generated link
-            document.getElementById('result').innerHTML = `
-                <p><strong>UPI Payment Link:</strong></p>
-                <a href="${link}" target="_blank">${link}</a>
-            `;
-
             // Show the Copy to Clipboard and Open Link buttons
             document.getElementById('copyLink').style.display = 'block';
             document.getElementById('openLink').style.display = 'block';
+
+            // Hide Generate Link button
+            document.getElementById('generateLink').style.display = 'none';
+
+            // Show the Refresh button after 6 seconds
+            setTimeout(function() {
+                document.getElementById('refreshButton').style.display = 'block';
+            }, 6000);
 
             // Copy link to clipboard with text change
             document.getElementById('copyLink').onclick = function() {
                 navigator.clipboard.writeText(link).then(function() {
                     const copyButton = document.getElementById('copyLink');
-                    copyButton.textContent = 'Copied Successfully!';
+                    copyButton.textContent = 'Copied Successfully';
 
                     // Reset button text after 4 seconds
                     setTimeout(function() {
-                        copyButton.textContent = 'Copy to Clipboard';
+                        copyButton.innerHTML = 'Copy to Clipboard <img src="copy to clipboard button icon.png" alt="Copy Icon">';
                     }, 4000);
                 }, function(err) {
                     alert('Failed to copy link: ' + err);
@@ -135,6 +174,19 @@
             // Open link in new tab
             document.getElementById('openLink').onclick = function() {
                 window.open(link, '_blank');
+            };
+
+            // Fade-out content and refresh the page when clicking the refresh button
+            document.getElementById('refreshButton').onclick = function() {
+                const mainContent = document.getElementById('mainContent');
+                
+                // Fade out the content
+                mainContent.classList.add('fade-out');
+                
+                // Wait for the animation to finish before reloading
+                setTimeout(function() {
+                    location.reload();
+                }, 1000); // 1 second delay for smooth transition
             };
         });
     </script>
